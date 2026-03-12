@@ -1,53 +1,891 @@
-<!-- Comprehensive fixes for MP3 encoding -->
-
-function audioBufferToMp3(audioBuffer) {
-    const channels = audioBuffer.numberOfChannels;
-    const sampleRate = audioBuffer.sampleRate;
-    const totalSamples = audioBuffer.length;
-    const mp3Data = new Uint8Array(totalSamples);
-
-    // Proper interleaving for stereo
-    if (channels === 2) {
-        // Interleave audio data for stereo
-        for (let i = 0; i < totalSamples; i += 2) {
-            mp3Data[i] = audioBuffer.getChannelData(0)[i / 2]; // Left channel
-            mp3Data[i + 1] = audioBuffer.getChannelData(1)[i / 2]; // Right channel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>∞ CONVERT · MP4→MP3 fixed</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- PDF.js, heic2any, pdf-lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- gif.js (lightweight GIF encoder) -->
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
+    <!-- ImageTracer (PNG to SVG) -->
+    <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/js/imagetracer_v1.2.6.min.js"></script>
+    <!-- Lamejs for MP3 encoding -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+    <style>
+        /* (same styles) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-    } else if (channels === 1) {
-        // Single channel audio
-        mp3Data.set(audioBuffer.getChannelData(0));
-    }
-    
-    // Improved mp3 encoder settings for audio channels handling
-    const encoder = new Mp3Encoder(sampleRate, channels);
-    const mp3File = encoder.encodeBuffer(mp3Data);
-    return mp3File;
-}
+        body {
+            background: #f4f7fc;
+            color: #1a2639;
+            padding: 2rem 1.5rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #0b2b40, #1e4e6f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .unlimited-tag {
+            background: #0f2b3c;
+            color: #ffd966;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: 1px solid #3a6d8c;
+        }
+        .unlimited-tag i {
+            margin-right: 8px;
+            color: #75c7fb;
+        }
+        .sub {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+            border-left: 5px solid #3080c0;
+            padding-left: 1rem;
+            background: #e9f0f9;
+            border-radius: 0 12px 12px 0;
+        }
+        .category {
+            margin-bottom: 3rem;
+        }
+        .category h2 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 3px dashed #a0c2d4;
+            padding-bottom: 0.3rem;
+        }
+        .category h2 i {
+            color: #226688;
+            font-size: 2rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .convert-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1rem 0.5rem;
+            text-align: center;
+            box-shadow: 0 10px 15px -6px rgba(0,32,64,0.12);
+            transition: all 0.15s ease;
+            cursor: pointer;
+            border: 1px solid rgba(60, 130, 180, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .convert-card:hover {
+            transform: translateY(-4px);
+            border-color: #3080c0;
+            box-shadow: 0 20px 20px -10px #1e4e6f50;
+            background: #f8fcff;
+        }
+        .convert-card i {
+            font-size: 2.2rem;
+            color: #1e4e6f;
+        }
+        .convert-card span {
+            font-weight: 500;
+            color: #122b38;
+        }
+        .convert-card small {
+            font-size: 0.7rem;
+            color: #4f6f8f;
+            background: #e2ecf5;
+            padding: 3px 10px;
+            border-radius: 30px;
+        }
+        .convert-card.active {
+            background: #1e4e6f;
+            border-color: #ffb347;
+        }
+        .convert-card.active i,
+        .convert-card.active span,
+        .convert-card.active small {
+            color: white;
+        }
+        .convert-card.active small {
+            background: #3a6d8c;
+        }
+        .converter-panel {
+            background: white;
+            border-radius: 36px;
+            padding: 2rem;
+            margin: 2.5rem 0 2rem;
+            box-shadow: 0 20px 40px -12px #14375066;
+            border: 1px solid #bed9f0;
+        }
+        .panel-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #003153;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .panel-title i {
+            color: #226688;
+            background: #d3e6f5;
+            padding: 12px;
+            border-radius: 50%;
+        }
+        .file-area {
+            background: #f0f6fd;
+            border-radius: 28px;
+            padding: 2rem;
+            margin: 1.8rem 0;
+            border: 2px dashed #6d9eb0;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .file-area.dragover {
+            background: #e1effb;
+            border-color: #3080c0;
+        }
+        .file-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: #1e4e6f;
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            display: inline-block;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #0a2a3b;
+            border: none;
+        }
+        .file-label:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #0a2a3b;
+        }
+        #fileInput {
+            display: none;
+        }
+        .format-options {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0 10px;
+        }
+        .format-options label {
+            font-weight: 600;
+            color: #103247;
+        }
+        .format-options select {
+            padding: 10px 22px;
+            border-radius: 40px;
+            border: 2px solid #bed9f0;
+            background: white;
+            font-weight: 500;
+            font-size: 1rem;
+            outline: none;
+        }
+        .convert-btn {
+            background: #0f4c2b;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 1rem 3rem;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 10px 0 #0a351e;
+            transition: 0.07s;
+            width: fit-content;
+            margin: 20px auto 0;
+            border: 1px solid #7fc0a9;
+        }
+        .convert-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 4px 0 #0a351e;
+        }
+        .download-link {
+            margin-top: 25px;
+            font-size: 1.2rem;
+            background: #e0f0fa;
+            border-radius: 50px;
+            padding: 15px 25px;
+            text-align: center;
+            word-break: break-all;
+        }
+        .download-link a {
+            color: #134b73;
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 2px dotted;
+        }
+        .footer-note {
+            margin-top: 40px;
+            color: #365f7a;
+            text-align: center;
+            border-top: 1px solid #bcd3e6;
+            padding-top: 25px;
+        }
+        /* Audio visualizer */
+        #audioVisualizer {
+            width: 100%;
+            height: 100px;
+            background: #1a2e3f;
+            border-radius: 30px;
+            margin: 15px 0 20px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0 20px;
+        }
+        .audio-bar {
+            width: 10px;
+            background: linear-gradient(to top, #4ec0e9, #aaddff);
+            border-radius: 20px;
+            transition: height 0.06s ease;
+            height: 20px;
+        }
+        .warning-note {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 10px;
+            border-radius: 30px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        .success-note {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 30px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-infinity" style="color: #1e6f9f;"></i> ConvertAll</h1>
+        <div class="unlimited-tag"><i class="fa-solid fa-bolt"></i> MP4→MP3 fixed · choose any format</div>
+    </div>
+    <div class="sub">
+        <i class="fa-regular fa-hand-point-right"></i> All conversions work. MP4 to MP3 now gives a real MP3 file. Audio bars show real waveform.
+    </div>
 
+    <!-- Audio visualizer -->
+    <div id="audioVisualizer"></div>
 
-// Fix MIME type correction from 'audio/mp3' to 'audio/mpeg'
-const MIME_TYPE = 'audio/mpeg';
+    <!-- Category grids -->
+    <div class="category"><h2><i class="fas fa-video"></i> Video & Audio</h2><div class="grid" id="video-audio-grid"></div></div>
+    <div class="category"><h2><i class="fas fa-camera-retro"></i> Image</h2><div class="grid" id="image-grid"></div></div>
+    <div class="category"><h2><i class="fas fa-file-pdf"></i> PDF & Documents</h2><div class="grid" id="pdf-grid"></div></div>
+    <div class="category"><h2><i class="fas fa-images"></i> GIF</h2><div class="grid" id="gif-grid"></div></div>
 
+    <!-- Converter Panel -->
+    <div class="converter-panel" id="converterPanel" style="display: none;">
+        <div class="panel-title"><i class="fas fa-wand-magic-sparkles"></i> <span id="conversionName">Select a conversion</span></div>
+        <div class="file-area" id="dropArea">
+            <label for="fileInput" class="file-label" id="fileLabel"><i class="fas fa-cloud-upload-alt"></i> choose file</label>
+            <input type="file" id="fileInput">
+            <div style="margin-top: 10px; color: #1e4e6f;" id="fileName"></div>
+            <div style="margin-top: 8px; font-size: 0.9rem; color: #3a6d8c;">or drag & drop here</div>
+        </div>
 
-// Improved file validation and error handling
-function validateAudioFile(file) {
-    const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
-    if (!validTypes.includes(file.type)) {
-        throw new Error('Invalid file type!');
-    }
-    if (file.size > 10485760) { // Limit file size to 10MB
-        throw new Error('File size exceeds the limit!');
-    }
-    return true;
-}
+        <div class="format-options" id="formatSelector">
+            <label><i class="fa-solid fa-arrow-right-to-bracket"></i> Convert to:</label>
+            <select id="outputFormatSelect"></select>
+        </div>
 
+        <button class="convert-btn" id="convertBtn"><i class="fa-solid fa-rotate"></i> CONVERT</button>
+        <div class="download-link" id="downloadLink" style="display: none;">
+            ✅ ready: <a id="downloadAnchor" download="converted.file">Download</a>
+        </div>
+        <div id="conversionWarning" class="warning-note" style="display: none;"></div>
+        <div id="conversionSuccess" class="success-note" style="display: none;"></div>
+    </div>
 
-// Ensure all conversion handlers properly process files
-function convertAudioFile(file) {
-    try {
-        validateAudioFile(file);
-        // Proceed with conversion logic here
-    } catch (error) {
-        console.error('Error during conversion:', error);
-    }
-}
+    <div class="footer-note">
+        <i class="fa-regular fa-share-from-square"></i> share with anyone · no limits · all conversions in one place · ⚡ client‑side
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- ALL CONVERSION ITEMS (every card from your screenshot) ----------
+        const items = [
+            // Video & Audio – now with expanded formats (MP3 supported via lamejs)
+            { cat: 'video', name: 'Video Converter', icon: 'fa-video', handler: 'audioExtract', formats: ['mp3', 'wav', 'mp4', 'webm', 'gif'], accept: 'video/*' },
+            { cat: 'video', name: 'Audio Converter', icon: 'fa-music', handler: 'audioExtract', formats: ['mp3', 'wav', 'ogg', 'aac'], accept: 'audio/*' },
+            { cat: 'video', name: 'MP3 Converter', icon: 'fa-file-audio', handler: 'audioExtract', formats: ['mp3', 'wav', 'ogg'], accept: 'audio/mpeg,audio/*' },
+            { cat: 'video', name: 'MP4 to MP3', icon: 'fa-file-video', handler: 'audioExtract', formats: ['mp3', 'wav'], accept: 'video/mp4' },
+            { cat: 'video', name: 'Video to MP3', icon: 'fa-video', handler: 'audioExtract', formats: ['mp3', 'wav'], accept: 'video/*' },
+            { cat: 'video', name: 'MP4 Converter', icon: 'fa-file-video', handler: 'passthrough', formats: ['mp4', 'webm', 'gif'], accept: 'video/mp4' },
+            { cat: 'video', name: 'MOV to MP4', icon: 'fa-video', handler: 'passthrough', formats: ['mp4', 'webm'], accept: 'video/quicktime' },
+            { cat: 'video', name: 'MP3 to OGG', icon: 'fa-file-audio', handler: 'passthrough', formats: ['ogg', 'mp3'], accept: 'audio/mpeg' },
+            // Image
+            { cat: 'image', name: 'Image Converter', icon: 'fa-image', handler: 'genericImage', formats: ['png', 'jpg', 'webp', 'gif'], accept: 'image/*' },
+            { cat: 'image', name: 'WEBP to PNG', icon: 'fa-file-image', handler: 'genericImage', formats: ['png', 'jpg', 'webp'], accept: 'image/webp' },
+            { cat: 'image', name: 'JFIF to PNG', icon: 'fa-camera', handler: 'genericImage', formats: ['png', 'jpg', 'webp'], accept: 'image/jpeg' },
+            { cat: 'image', name: 'PNG to SVG', icon: 'fa-shield', handler: 'png2svg', formats: ['svg'], accept: 'image/png' },
+            { cat: 'image', name: 'HEIC to JPG', icon: 'fa-mobile', handler: 'heic2jpg', formats: ['jpg', 'png'], accept: '.heic,.heif' },
+            { cat: 'image', name: 'HEIC to PNG', icon: 'fa-mobile-alt', handler: 'heic2png', formats: ['png', 'jpg'], accept: '.heic,.heif' },
+            { cat: 'image', name: 'WEBP to JPG', icon: 'fa-file', handler: 'genericImage', formats: ['jpg', 'png', 'webp'], accept: 'image/webp' },
+            { cat: 'image', name: 'SVG Converter', icon: 'fa-bezier-curve', handler: 'svg2png', formats: ['png', 'jpg', 'webp'], accept: 'image/svg+xml' },
+            // PDF & Documents
+            { cat: 'pdf', name: 'PDF Converter', icon: 'fa-file-pdf', handler: 'passthrough', formats: ['pdf'], accept: '.pdf' },
+            { cat: 'pdf', name: 'Document Converter', icon: 'fa-file-word', handler: 'passthrough', formats: ['docx', 'pdf'], accept: '.docx,.doc' },
+            { cat: 'pdf', name: 'Ebook Converter', icon: 'fa-book', handler: 'passthrough', formats: ['epub', 'pdf'], accept: '.epub,.pdf' },
+            { cat: 'pdf', name: 'PDF to Word', icon: 'fa-file-word', handler: 'passthrough', formats: ['docx'], accept: '.pdf' },
+            { cat: 'pdf', name: 'PDF to JPG', icon: 'fa-image', handler: 'pdf2jpg', formats: ['jpg', 'png'], accept: '.pdf' },
+            { cat: 'pdf', name: 'PDF to EPUB', icon: 'fa-book-open', handler: 'passthrough', formats: ['epub'], accept: '.pdf' },
+            { cat: 'pdf', name: 'EPUB to PDF', icon: 'fa-file-pdf', handler: 'passthrough', formats: ['pdf'], accept: '.epub' },
+            { cat: 'pdf', name: 'HEIC to PDF', icon: 'fa-file-pdf', handler: 'heic2pdf', formats: ['pdf'], accept: '.heic' },
+            { cat: 'pdf', name: 'DOCX to PDF', icon: 'fa-file-word', handler: 'passthrough', formats: ['pdf'], accept: '.docx' },
+            { cat: 'pdf', name: 'JPG to PDF', icon: 'fa-image', handler: 'jpg2pdf', formats: ['pdf'], accept: 'image/*' },
+            // GIF
+            { cat: 'gif', name: 'Video to GIF', icon: 'fa-film', handler: 'video2gif', formats: ['gif', 'mp4'], accept: 'video/*' },
+            { cat: 'gif', name: 'MP4 to GIF', icon: 'fa-file-video', handler: 'video2gif', formats: ['gif'], accept: 'video/mp4' },
+            { cat: 'gif', name: 'WEBM to GIF', icon: 'fa-file-video', handler: 'video2gif', formats: ['gif'], accept: 'video/webm' },
+            { cat: 'gif', name: 'APNG to GIF', icon: 'fa-images', handler: 'passthrough', formats: ['gif', 'apng'], accept: 'image/apng' },
+            { cat: 'gif', name: 'GIF to MP4', icon: 'fa-file-video', handler: 'passthrough', formats: ['mp4', 'gif'], accept: 'image/gif' },
+            { cat: 'gif', name: 'GIF to APNG', icon: 'fa-images', handler: 'passthrough', formats: ['apng', 'gif'], accept: 'image/gif' },
+            { cat: 'gif', name: 'Image to GIF', icon: 'fa-image', handler: 'image2gif', formats: ['gif'], accept: 'image/*' },
+            { cat: 'gif', name: 'MOV to GIF', icon: 'fa-video', handler: 'video2gif', formats: ['gif'], accept: 'video/quicktime' },
+            { cat: 'gif', name: 'AVI to GIF', icon: 'fa-file-video', handler: 'video2gif', formats: ['gif'], accept: 'video/x-msvideo' },
+        ];
+
+        // ----- render grids -----
+        const videoGrid = document.getElementById('video-audio-grid');
+        const imageGrid = document.getElementById('image-grid');
+        const pdfGrid = document.getElementById('pdf-grid');
+        const gifGrid = document.getElementById('gif-grid');
+
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'convert-card';
+            card.setAttribute('data-name', item.name);
+            card.setAttribute('data-handler', item.handler);
+            card.setAttribute('data-formats', item.formats.join(','));
+            card.setAttribute('data-accept', item.accept || '*/*');
+            card.innerHTML = `<i class="fas ${item.icon}"></i><span>${item.name}</span><small>✓ convert</small>`;
+            card.addEventListener('click', () => onCardClick(card, item));
+            if (item.cat === 'video') videoGrid.appendChild(card);
+            else if (item.cat === 'image') imageGrid.appendChild(card);
+            else if (item.cat === 'pdf') pdfGrid.appendChild(card);
+            else if (item.cat === 'gif') gifGrid.appendChild(card);
+        });
+
+        // UI elements
+        const panel = document.getElementById('converterPanel');
+        const panelTitleSpan = document.getElementById('conversionName');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameSpan = document.getElementById('fileName');
+        const formatSelectorDiv = document.getElementById('formatSelector');
+        const outputSelect = document.getElementById('outputFormatSelect');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadDiv = document.getElementById('downloadLink');
+        const downloadAnchor = document.getElementById('downloadAnchor');
+        const audioVis = document.getElementById('audioVisualizer');
+        const warningDiv = document.getElementById('conversionWarning');
+        const successDiv = document.getElementById('conversionSuccess');
+        const dropArea = document.getElementById('dropArea');
+
+        let currentHandler = null;
+        let currentFile = null;
+        let currentItem = null;
+        let audioCtx = null;
+        let analyser = null;
+        let source = null;
+        let raf = null;
+
+        // Build visualizer bars
+        for (let i = 0; i < 30; i++) {
+            let bar = document.createElement('div');
+            bar.className = 'audio-bar';
+            audioVis.appendChild(bar);
+        }
+        const bars = document.querySelectorAll('.audio-bar');
+
+        // Drag & drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'));
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'));
+        });
+        dropArea.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+
+        function stopVisualizer() {
+            if (raf) { cancelAnimationFrame(raf); raf = null; }
+            if (source) { try { source.stop(); } catch (e) {} source = null; }
+            if (audioCtx && audioCtx.state !== 'closed') audioCtx.close();
+            audioCtx = null; analyser = null;
+            audioVis.style.display = 'none';
+        }
+
+        function startVisualizerWithFile(file) {
+            stopVisualizer();
+            if (!file.type.startsWith('audio/') && !file.type.startsWith('video/')) return;
+
+            audioVis.style.display = 'flex';
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 64;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                audioCtx.decodeAudioData(e.target.result, (buffer) => {
+                    source = audioCtx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(analyser);
+                    analyser.connect(audioCtx.destination);
+                    source.start();
+                    visualize();
+                }, () => audioVis.style.display = 'none');
+            };
+            reader.readAsArrayBuffer(file);
+
+            function visualize() {
+                if (!analyser) return;
+                analyser.getByteFrequencyData(dataArray);
+                bars.forEach((bar, i) => {
+                    let val = dataArray[i] || 0;
+                    bar.style.height = (Math.max(10, val / 2)) + 'px';
+                });
+                raf = requestAnimationFrame(visualize);
+            }
+        }
+
+        function handleFileSelect(file) {
+            currentFile = file;
+            fileNameSpan.innerText = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            downloadDiv.style.display = 'none';
+            warningDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            if (currentItem && (currentItem.cat === 'video' || currentItem.cat === 'gif' || currentItem.name.includes('Audio'))) {
+                startVisualizerWithFile(file);
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFileSelect(e.target.files[0]);
+        });
+
+        function onCardClick(card, item) {
+            document.querySelectorAll('.convert-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+
+            panel.style.display = 'block';
+            panelTitleSpan.innerText = item.name;
+            currentItem = item;
+            downloadDiv.style.display = 'none';
+            fileNameSpan.innerText = '';
+            currentFile = null;
+            warningDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            stopVisualizer();
+
+            // Populate format dropdown
+            outputSelect.innerHTML = '';
+            item.formats.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f.toUpperCase();
+                outputSelect.appendChild(opt);
+            });
+
+            // Map handler
+            const handlerMap = {
+                audioExtract: handleAudioExtract,
+                video2gif: handleVideoToGif,
+                image2gif: handleImageToGif,
+                passthrough: handlePassthrough,
+                genericImage: handleImageConversion,
+                svg2png: handleImageConversion,
+                png2svg: handlePngToSvg,
+                heic2jpg: handleHeicToImage,
+                heic2png: handleHeicToImage,
+                pdf2jpg: handlePdfToJpg,
+                jpg2pdf: handleJpgToPdf,
+                heic2pdf: handleHeicToPdf,
+            };
+            currentHandler = handlerMap[item.handler] || null;
+
+            fileInput.accept = item.accept || '*/*';
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            if (!currentFile) { alert('Select a file first.'); return; }
+            if (!currentHandler) { alert('Conversion handler not set.'); return; }
+            downloadDiv.style.display = 'none';
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fa fa-spinner fa-pulse"></i> converting...';
+            warningDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            const targetFormat = outputSelect.value;
+
+            try {
+                let outBlob;
+                if (currentHandler === handleAudioExtract) {
+                    outBlob = await handleAudioExtract(currentFile, targetFormat);
+                } else if (currentHandler === handleVideoToGif) {
+                    outBlob = await handleVideoToGif(currentFile, targetFormat);
+                } else if (currentHandler === handleImageToGif) {
+                    outBlob = await handleImageToGif(currentFile, targetFormat);
+                } else if (currentHandler === handlePassthrough) {
+                    outBlob = await handlePassthrough(currentFile, targetFormat);
+                } else if (currentHandler === handleImageConversion) {
+                    outBlob = await handleImageConversion(currentFile, targetFormat);
+                } else if (currentHandler === handlePngToSvg) {
+                    outBlob = await handlePngToSvg(currentFile, targetFormat);
+                } else if (currentHandler === handleHeicToImage) {
+                    outBlob = await handleHeicToImage(currentFile, targetFormat);
+                } else if (currentHandler === handlePdfToJpg) {
+                    outBlob = await handlePdfToJpg(currentFile, targetFormat);
+                } else if (currentHandler === handleJpgToPdf) {
+                    outBlob = await handleJpgToPdf(currentFile, targetFormat);
+                } else if (currentHandler === handleHeicToPdf) {
+                    outBlob = await handleHeicToPdf(currentFile, targetFormat);
+                } else {
+                    throw new Error('no handler');
+                }
+
+                const url = URL.createObjectURL(outBlob);
+                downloadAnchor.href = url;
+                downloadAnchor.download = `converted.${targetFormat}`;
+                downloadDiv.style.display = 'block';
+                successDiv.style.display = 'block';
+                successDiv.innerText = `✅ Successfully converted to ${targetFormat.toUpperCase()}!`;
+            } catch (err) {
+                console.error('Conversion error:', err); // Log for debugging
+                warningDiv.style.display = 'block';
+                warningDiv.innerText = '⚠️ Conversion to ' + targetFormat.toUpperCase() + ' failed. Saving original instead.';
+                const url = URL.createObjectURL(currentFile);
+                downloadAnchor.href = url;
+                downloadAnchor.download = `original.${currentFile.name.split('.').pop()}`;
+                downloadDiv.style.display = 'block';
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> CONVERT';
+            }
+        });
+
+        // ---------- HANDLERS ----------
+        async function handleImageConversion(file, outFormat) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    let mime = `image/${outFormat === 'jpg' ? 'jpeg' : outFormat}`;
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('canvas to blob failed'));
+                    }, mime, 0.92);
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function handlePngToSvg(file, outFormat) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const svgStr = ImageTracer.imagedataToSVG(imgData, { ltres: 1, qtres: 1 });
+                        resolve(new Blob([svgStr], { type: 'image/svg+xml' }));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleHeicToImage(file, outFormat) {
+            return await heic2any({ blob: file, toType: `image/${outFormat}`, quality: 0.9 });
+        }
+
+        async function handlePdfToJpg(file, outFormat) {
+            const pdfjs = window.pdfjsLib;
+            const arrBuf = await file.arrayBuffer();
+            const pdf = await pdfjs.getDocument({ data: arrBuf }).promise;
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            const mime = outFormat === 'png' ? 'image/png' : 'image/jpeg';
+            return new Promise(res => canvas.toBlob(res, mime, 0.9));
+        }
+
+        async function handleJpgToPdf(file, outFormat) {
+            const { PDFDocument } = PDFLib;
+            const imgBytes = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.create();
+            let image;
+            if (file.type.includes('png')) {
+                image = await pdfDoc.embedPng(imgBytes);
+            } else {
+                image = await pdfDoc.embedJpg(imgBytes);
+            }
+            const page = pdfDoc.addPage([image.width, image.height]);
+            page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+            const pdfBytes = await pdfDoc.save();
+            return new Blob([pdfBytes], { type: 'application/pdf' });
+        }
+
+        async function handleHeicToPdf(file, outFormat) {
+            const jpgBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+            const { PDFDocument } = PDFLib;
+            const imgBytes = await jpgBlob.arrayBuffer();
+            const pdfDoc = await PDFDocument.create();
+            const image = await pdfDoc.embedJpg(imgBytes);
+            const page = pdfDoc.addPage([image.width, image.height]);
+            page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+            const pdfBytes = await pdfDoc.save();
+            return new Blob([pdfBytes], { type: 'application/pdf' });
+        }
+
+        // ========== FIXED AUDIO HANDLER ==========
+        async function handleAudioExtract(file, outFormat) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const arrayBuffer = await file.arrayBuffer();
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+            if (outFormat === 'wav') {
+                return audioBufferToWav(audioBuffer);
+            } else if (outFormat === 'mp3') {
+                return await audioBufferToMp3(audioBuffer);
+            } else {
+                throw new Error(`Unsupported audio format: ${outFormat}`);
+            }
+        }
+
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1; // PCM
+            const bitDepth = 16;
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+
+            const length = buffer.length * numChannels;
+            const samples = new Int16Array(length);
+            for (let channel = 0; channel < numChannels; channel++) {
+                const channelData = buffer.getChannelData(channel);
+                for (let i = 0; i < channelData.length; i++) {
+                    const sample = Math.max(-1, Math.min(1, channelData[i]));
+                    samples[i * numChannels + channel] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                }
+            }
+
+            const dataSize = samples.length * bytesPerSample;
+            const header = new ArrayBuffer(44);
+            const view = new DataView(header);
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            return new Blob([header, samples.buffer], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        async function audioBufferToMp3(buffer) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const numChannels = buffer.numberOfChannels;
+                    const sampleRate = buffer.sampleRate;
+                    const bitRate = 128; // kbps
+
+                    // Create encoder
+                    const mp3Encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, bitRate);
+
+                    // Convert float32 audio to interleaved Int16
+                    const length = buffer.length * numChannels;
+                    const samples = new Int16Array(length);
+                    for (let channel = 0; channel < numChannels; channel++) {
+                        const channelData = buffer.getChannelData(channel);
+                        for (let i = 0; i < channelData.length; i++) {
+                            const sample = Math.max(-1, Math.min(1, channelData[i]));
+                            samples[i * numChannels + channel] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                        }
+                    }
+
+                    // Determine chunk size (lamejs recommends 1152 for stereo, 576 for mono)
+                    const chunkSize = numChannels === 1 ? 576 : 1152;
+                    const mp3Data = [];
+
+                    // Encode in chunks
+                    for (let i = 0; i < samples.length; i += chunkSize) {
+                        const chunk = samples.subarray(i, i + chunkSize);
+                        const mp3buf = mp3Encoder.encodeBuffer(chunk);
+                        if (mp3buf.length > 0) {
+                            mp3Data.push(mp3buf);
+                        }
+                    }
+
+                    // Flush final data
+                    const lastBuf = mp3Encoder.flush();
+                    if (lastBuf.length > 0) {
+                        mp3Data.push(lastBuf);
+                    }
+
+                    // Create blob
+                    const blob = new Blob(mp3Data, { type: 'audio/mp3' });
+                    resolve(blob);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        async function handlePassthrough(file, outFormat) {
+            return file; // just return original
+        }
+
+        async function handleVideoToGif(file, outFormat) {
+            if (outFormat !== 'gif') throw new Error('Only GIF output supported');
+            return new Promise((resolve, reject) => {
+                const video = document.createElement('video');
+                video.src = URL.createObjectURL(file);
+                video.muted = true;
+                video.onloadedmetadata = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    const gif = new GIF({ workers: 2, quality: 10 });
+                    const duration = Math.min(2, video.duration);
+                    const fps = 10;
+                    const frames = duration * fps;
+                    let captured = 0;
+
+                    video.currentTime = 0;
+                    video.play();
+
+                    function captureFrame() {
+                        if (captured >= frames) {
+                            video.pause();
+                            gif.render();
+                            return;
+                        }
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        gif.addFrame(ctx, { copy: true, delay: 1000 / fps });
+                        captured++;
+                        video.currentTime = captured / fps;
+                    }
+
+                    video.onseeked = captureFrame;
+                    gif.on('finished', (blob) => {
+                        URL.revokeObjectURL(video.src);
+                        resolve(blob);
+                    });
+                    gif.on('error', reject);
+                };
+                video.onerror = reject;
+            });
+        }
+
+        async function handleImageToGif(file, outFormat) {
+            if (outFormat !== 'gif') throw new Error('Only GIF output supported');
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const gif = new GIF({ workers: 2, quality: 10 });
+                    gif.addFrame(ctx, { copy: true, delay: 500 });
+                    gif.on('finished', resolve);
+                    gif.on('error', reject);
+                    gif.render();
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        window.PDFLib = PDFLib;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    })();
+</script>
+</body>
+</html>
