@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>∞ UNLIMITED CONVERT · all formats</title>
+    <!-- Font Awesome Icons 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- PDF.js, heic2any, pdf-lib for advanced conversions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f4f7fc;
+            color: #1a2639;
+            padding: 2rem 1.5rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* header / unlimited badge */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #0b2b40, #1e4e6f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .unlimited-tag {
+            background: #0f2b3c;
+            color: #ffd966;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 8px 14px rgba(0,20,30,0.2);
+            border: 1px solid #3a6d8c;
+        }
+        .unlimited-tag i {
+            margin-right: 8px;
+            color: #75c7fb;
+        }
+
+        .sub {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+            border-left: 5px solid #3080c0;
+            padding-left: 1rem;
+            background: #e9f0f9;
+            border-radius: 0 12px 12px 0;
+            line-height: 1.4;
+        }
+
+        /* category sections */
+        .category {
+            margin-bottom: 3rem;
+        }
+
+        .category h2 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 3px dashed #a0c2d4;
+            padding-bottom: 0.3rem;
+        }
+
+        .category h2 i {
+            color: #226688;
+            font-size: 2rem;
+            width: 2.2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .convert-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1rem 0.5rem;
+            text-align: center;
+            box-shadow: 0 10px 15px -6px rgba(0,32,64,0.12);
+            transition: all 0.15s ease;
+            cursor: pointer;
+            border: 1px solid rgba(60, 130, 180, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .convert-card:hover {
+            transform: translateY(-4px);
+            border-color: #3080c0;
+            box-shadow: 0 20px 20px -10px #1e4e6f50;
+            background: #f8fcff;
+        }
+
+        .convert-card i {
+            font-size: 2.2rem;
+            color: #1e4e6f;
+        }
+
+        .convert-card span {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #122b38;
+        }
+
+        .convert-card small {
+            font-size: 0.7rem;
+            color: #4f6f8f;
+            background: #e2ecf5;
+            padding: 3px 10px;
+            border-radius: 30px;
+        }
+
+        /* active selection */
+        .convert-card.active {
+            background: #1e4e6f;
+            border-color: #ffb347;
+        }
+        .convert-card.active i,
+        .convert-card.active span,
+        .convert-card.active small {
+            color: white;
+        }
+        .convert-card.active small {
+            background: #3a6d8c;
+        }
+
+        /* converter panel */
+        .converter-panel {
+            background: white;
+            border-radius: 36px;
+            padding: 2rem 2rem 2rem 2rem;
+            margin: 2.5rem 0 2rem;
+            box-shadow: 0 20px 40px -12px #14375066;
+            border: 1px solid #bed9f0;
+        }
+
+        .panel-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #003153;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-title i {
+            color: #226688;
+            background: #d3e6f5;
+            padding: 12px;
+            border-radius: 50%;
+        }
+
+        .file-area {
+            background: #f0f6fd;
+            border-radius: 28px;
+            padding: 2rem;
+            margin: 1.8rem 0;
+            border: 2px dashed #6d9eb0;
+            text-align: center;
+        }
+
+        .file-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: #1e4e6f;
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            display: inline-block;
+            cursor: pointer;
+            transition: 0.1s;
+            border: none;
+            box-shadow: 0 6px 0 #0a2a3b;
+        }
+        .file-label:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #0a2a3b;
+        }
+        #fileInput {
+            display: none;
+        }
+
+        .format-options {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0 10px;
+        }
+
+        .format-options label {
+            font-weight: 600;
+            color: #103247;
+        }
+
+        .format-options select {
+            padding: 10px 22px;
+            border-radius: 40px;
+            border: 2px solid #bed9f0;
+            background: white;
+            font-weight: 500;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .convert-btn {
+            background: #0f4c2b;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 1rem 3rem;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 10px 0 #0a351e;
+            transition: 0.07s;
+            width: fit-content;
+            margin: 20px auto 0;
+            border: 1px solid #7fc0a9;
+        }
+
+        .convert-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 4px 0 #0a351e;
+        }
+
+        .download-link {
+            margin-top: 25px;
+            font-size: 1.2rem;
+            background: #e0f0fa;
+            border-radius: 50px;
+            padding: 15px 25px;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .download-link a {
+            color: #134b73;
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 2px dotted;
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            color: #365f7a;
+            text-align: center;
+            border-top: 1px solid #bcd3e6;
+            padding-top: 25px;
+        }
+        .footer-note i {
+            color: #dc7f2e;
+        }
+        .disabled-card {
+            opacity: 0.6;
+            filter: grayscale(0.5);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-infinity" style="color: #1e6f9f;"></i> ConvertAll</h1>
+        <div class="unlimited-tag"><i class="fa-solid fa-bolt"></i> NO LIMITS · 100% free · unlimited file size</div>
+    </div>
+    <div class="sub">
+        <i class="fa-regular fa-hand-point-right"></i> Click any conversion below. Implemented: images (JPG/PNG/WEBP/HEIC/SVG), PDF to JPG, JPG to PDF, HEIC to PDF. Others: coming with full power (UI ready).
+    </div>
+
+    <!-- Category: Video & Audio (all mocked for now, but present) -->
+    <div class="category">
+        <h2><i class="fas fa-video"></i> Video & Audio <span style="font-size: 0.8rem; background: #ffe1a0; padding: 4px 15px; border-radius: 30px;">mock</span></h2>
+        <div class="grid" id="video-audio-grid"></div>
+    </div>
+
+    <!-- Category: Image (partially implemented) -->
+    <div class="category">
+        <h2><i class="fas fa-camera-retro"></i> Image <span style="font-size: 0.8rem; background: #c8e7b5; padding: 4px 15px; border-radius: 30px;">active converts</span></h2>
+        <div class="grid" id="image-grid"></div>
+    </div>
+
+    <!-- Category: PDF & Documents (partially implemented) -->
+    <div class="category">
+        <h2><i class="fas fa-file-pdf"></i> PDF & Documents <span style="font-size: 0.8rem; background: #c8e7b5; padding: 4px 15px; border-radius: 30px;">active converts</span></h2>
+        <div class="grid" id="pdf-grid"></div>
+    </div>
+
+    <!-- Category: GIF (all mocked) -->
+    <div class="category">
+        <h2><i class="fas fa-images"></i> GIF <span style="font-size: 0.8rem; background: #ffe1a0; padding: 4px 15px; border-radius: 30px;">mock</span></h2>
+        <div class="grid" id="gif-grid"></div>
+    </div>
+
+    <!-- === CONVERTER PANEL (dynamic) === -->
+    <div class="converter-panel" id="converterPanel" style="display: none;">
+        <div class="panel-title" id="panelTitle">
+            <i class="fas fa-wand-magic-sparkles"></i> <span id="conversionName">Select a conversion</span>
+        </div>
+        <div class="file-area">
+            <label for="fileInput" class="file-label" id="fileLabel"><i class="fas fa-cloud-upload-alt"></i> choose file</label>
+            <input type="file" id="fileInput">
+            <div style="margin-top: 10px; color: #1e4e6f;" id="fileName"></div>
+        </div>
+
+        <!-- output format selector (shown for dynamic) -->
+        <div class="format-options" id="formatSelector">
+            <label>Convert to:</label>
+            <select id="outputFormatSelect">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="webp">WEBP</option>
+            </select>
+        </div>
+
+        <button class="convert-btn" id="convertBtn"><i class="fa-solid fa-rotate"></i> CONVERT</button>
+        <div class="download-link" id="downloadLink" style="display: none;">
+            ✅ ready: <a id="downloadAnchor" download="converted.file">Download</a>
+        </div>
+    </div>
+
+    <!-- footer -->
+    <div class="footer-note">
+        <i class="fa-regular fa-share-from-square"></i> share with anyone · no limits · all conversions in one place · ⚡ client-side (no upload)
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- DATA: all conversion items exactly from screenshot, with categories and tags -----
+        const items = [
+            // Video & Audio
+            { cat: 'video', name: 'Video Converter', icon: 'fa-video', impl: false },
+            { cat: 'video', name: 'Audio Converter', icon: 'fa-music', impl: false },
+            { cat: 'video', name: 'MP3 Converter', icon: 'fa-file-audio', impl: false },
+            { cat: 'video', name: 'MP4 to MP3', icon: 'fa-file-video', impl: false },
+            { cat: 'video', name: 'Video to MP3', icon: 'fa-video', impl: false },
+            { cat: 'video', name: 'MP4 Converter', icon: 'fa-file-video', impl: false },
+            { cat: 'video', name: 'MOV to MP4', icon: 'fa-video', impl: false },
+            { cat: 'video', name: 'MP3 to OGG', icon: 'fa-file-audio', impl: false },
+            // Image
+            { cat: 'image', name: 'Image Converter', icon: 'fa-image', impl: true, handler: 'genericImage' },
+            { cat: 'image', name: 'WEBP to PNG', icon: 'fa-file-image', impl: true, handler: 'webp2png' },
+            { cat: 'image', name: 'JFIF to PNG', icon: 'fa-camera', impl: true, handler: 'jfif2png' },
+            { cat: 'image', name: 'PNG to SVG', icon: 'fa-shield', impl: false, msg: 'PNG to SVG requires vectorization. Coming soon.' },
+            { cat: 'image', name: 'HEIC to JPG', icon: 'fa-mobile', impl: true, handler: 'heic2jpg' },
+            { cat: 'image', name: 'HEIC to PNG', icon: 'fa-mobile-alt', impl: true, handler: 'heic2png' },
+            { cat: 'image', name: 'WEBP to JPG', icon: 'fa-file', impl: true, handler: 'webp2jpg' },
+            { cat: 'image', name: 'SVG Converter', icon: 'fa-bezier-curve', impl: true, handler: 'svgConverter' },
+            // PDF & Documents
+            { cat: 'pdf', name: 'PDF Converter', icon: 'fa-file-pdf', impl: false },
+            { cat: 'pdf', name: 'Document Converter', icon: 'fa-file-word', impl: false },
+            { cat: 'pdf', name: 'Ebook Converter', icon: 'fa-book', impl: false },
+            { cat: 'pdf', name: 'PDF to Word', icon: 'fa-file-word', impl: false },
+            { cat: 'pdf', name: 'PDF to JPG', icon: 'fa-image', impl: true, handler: 'pdf2jpg' },
+            { cat: 'pdf', name: 'PDF to EPUB', icon: 'fa-book-open', impl: false },
+            { cat: 'pdf', name: 'EPUB to PDF', icon: 'fa-file-pdf', impl: false },
+            { cat: 'pdf', name: 'HEIC to PDF', icon: 'fa-file-pdf', impl: true, handler: 'heic2pdf' },
+            { cat: 'pdf', name: 'DOCX to PDF', icon: 'fa-file-word', impl: false },
+            { cat: 'pdf', name: 'JPG to PDF', icon: 'fa-image', impl: true, handler: 'jpg2pdf' },
+            // GIF
+            { cat: 'gif', name: 'Video to GIF', icon: 'fa-film', impl: false },
+            { cat: 'gif', name: 'MP4 to GIF', icon: 'fa-file-video', impl: false },
+            { cat: 'gif', name: 'WEBM to GIF', icon: 'fa-file-video', impl: false },
+            { cat: 'gif', name: 'APNG to GIF', icon: 'fa-images', impl: false },
+            { cat: 'gif', name: 'GIF to MP4', icon: 'fa-file-video', impl: false },
+            { cat: 'gif', name: 'GIF to APNG', icon: 'fa-images', impl: false },
+            { cat: 'gif', name: 'Image to GIF', icon: 'fa-image', impl: false },
+            { cat: 'gif', name: 'MOV to GIF', icon: 'fa-video', impl: false },
+            { cat: 'gif', name: 'AVI to GIF', icon: 'fa-file-video', impl: false },
+        ];
+
+        // mapping: handler name → function (file, outFormat) returns promise blob
+        // will be defined later
+        const handlerMap = {};
+
+        // ----- render grids -----
+        const videoGrid = document.getElementById('video-audio-grid');
+        const imageGrid = document.getElementById('image-grid');
+        const pdfGrid = document.getElementById('pdf-grid');
+        const gifGrid = document.getElementById('gif-grid');
+
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'convert-card' + (item.impl ? '' : ' disabled-card');
+            card.setAttribute('data-name', item.name);
+            card.setAttribute('data-impl', item.impl);
+            card.setAttribute('data-handler', item.handler || '');
+            card.setAttribute('data-msg', item.msg || '');
+            card.innerHTML = `<i class="fas ${item.icon}"></i><span>${item.name}</span><small>${item.impl ? '✓ convert' : 'soon'}</small>`;
+            card.addEventListener('click', () => onCardClick(card, item));
+            if (item.cat === 'video') videoGrid.appendChild(card);
+            else if (item.cat === 'image') imageGrid.appendChild(card);
+            else if (item.cat === 'pdf') pdfGrid.appendChild(card);
+            else if (item.cat === 'gif') gifGrid.appendChild(card);
+        });
+
+        // UI elements
+        const panel = document.getElementById('converterPanel');
+        const panelTitleSpan = document.getElementById('conversionName');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameSpan = document.getElementById('fileName');
+        const formatSelectorDiv = document.getElementById('formatSelector');
+        const outputSelect = document.getElementById('outputFormatSelect');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadDiv = document.getElementById('downloadLink');
+        const downloadAnchor = document.getElementById('downloadAnchor');
+
+        let currentHandler = null;      // handler function
+        let currentFile = null;
+        let currentItemName = '';
+        let currentOutFormat = 'png';   // default
+
+        // hide format selector by default (show only for generic)
+        formatSelectorDiv.style.display = 'none';
+
+        function onCardClick(card, item) {
+            // remove active from all
+            document.querySelectorAll('.convert-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+
+            if (!item.impl) {
+                alert(item.msg || `🚧 "${item.name}" is not yet implemented, but we're building it with no limits! Try one of the green active ones.`);
+                panel.style.display = 'none';
+                return;
+            }
+
+            // show panel
+            panel.style.display = 'block';
+            panelTitleSpan.innerText = item.name;
+            currentItemName = item.name;
+            // reset download
+            downloadDiv.style.display = 'none';
+            fileNameSpan.innerText = '';
+            currentFile = null;
+
+            // decide if output format selector visible
+            const handlerType = item.handler;
+            if (['genericImage', 'svgConverter', 'image-converter'].includes(handlerType) || handlerType === 'genericImage') {
+                formatSelectorDiv.style.display = 'flex';
+                // populate options: for SVG maybe restrict? but keep all
+                outputSelect.innerHTML = `<option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WEBP</option>`;
+            } else if (handlerType === 'heic2jpg' || handlerType === 'heic2png' || handlerType === 'webp2png' || handlerType === 'webp2jpg' || handlerType === 'jfif2png' || handlerType === 'pdf2jpg' || handlerType === 'jpg2pdf' || handlerType === 'heic2pdf') {
+                formatSelectorDiv.style.display = 'none'; // fixed output
+            } else {
+                formatSelectorDiv.style.display = 'none';
+            }
+
+            // map handler string to function
+            if (handlerType === 'genericImage' || handlerType === 'webp2png' || handlerType === 'jfif2png' || handlerType === 'webp2jpg') {
+                currentHandler = handleImageConversion;
+            } else if (handlerType === 'heic2jpg' || handlerType === 'heic2png') {
+                currentHandler = handleHeicToImage;
+            } else if (handlerType === 'svgConverter') {
+                currentHandler = handleSvgConversion;
+            } else if (handlerType === 'pdf2jpg') {
+                currentHandler = handlePdfToJpg;
+            } else if (handlerType === 'jpg2pdf') {
+                currentHandler = handleJpgToPdf;
+            } else if (handlerType === 'heic2pdf') {
+                currentHandler = handleHeicToPdf;
+            } else {
+                currentHandler = null;
+            }
+
+            // set accept attribute based on handler
+            if (handlerType === 'heic2jpg' || handlerType === 'heic2png' || handlerType === 'heic2pdf') {
+                fileInput.accept = '.heic, .heif, image/heic';
+            } else if (handlerType === 'pdf2jpg') {
+                fileInput.accept = '.pdf, application/pdf';
+            } else if (handlerType === 'jpg2pdf') {
+                fileInput.accept = '.jpg, .jpeg, .png, .webp, image/*'; // many images
+            } else if (handlerType === 'svgConverter') {
+                fileInput.accept = '.svg, image/svg+xml';
+            } else {
+                fileInput.accept = 'image/*'; // generic images
+            }
+        }
+
+        // file input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                currentFile = e.target.files[0];
+                fileNameSpan.innerText = `📄 ${currentFile.name} (${(currentFile.size / 1024).toFixed(1)} KB)`;
+                downloadDiv.style.display = 'none';
+            }
+        });
+
+        // convert button
+        convertBtn.addEventListener('click', async () => {
+            if (!currentFile) {
+                alert('Select a file first.');
+                return;
+            }
+            if (!currentHandler) {
+                alert('Conversion handler not set.');
+                return;
+            }
+            downloadDiv.style.display = 'none';
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fa fa-spinner fa-pulse"></i> converting...';
+
+            try {
+                let outBlob;
+                if (currentHandler === handleImageConversion) {
+                    // generic image : we need output format from selector
+                    const outFmt = outputSelect.value; // 'png','jpg','webp'
+                    outBlob = await handleImageConversion(currentFile, outFmt);
+                } else if (currentHandler === handleHeicToImage) {
+                    const targetFormat = currentItemName.includes('JPG') ? 'jpg' : 'png';
+                    outBlob = await handleHeicToImage(currentFile, targetFormat);
+                } else if (currentHandler === handleSvgConversion) {
+                    const outFmt = outputSelect.value;
+                    outBlob = await handleSvgConversion(currentFile, outFmt);
+                } else if (currentHandler === handlePdfToJpg) {
+                    outBlob = await handlePdfToJpg(currentFile);
+                } else if (currentHandler === handleJpgToPdf) {
+                    outBlob = await handleJpgToPdf(currentFile);
+                } else if (currentHandler === handleHeicToPdf) {
+                    outBlob = await handleHeicToPdf(currentFile);
+                } else {
+                    throw new Error('no handler');
+                }
+
+                // create download
+                const url = URL.createObjectURL(outBlob);
+                downloadAnchor.href = url;
+                downloadAnchor.download = `converted.${outBlob.type.split('/')[1] || 'bin'}`;
+                downloadDiv.style.display = 'block';
+            } catch (err) {
+                alert('Conversion error: ' + err.message);
+                console.error(err);
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> CONVERT';
+            }
+        });
+
+        // ---------- IMPLEMENTATION OF HANDLERS ----------
+        async function handleImageConversion(file, outFormat) {
+            // reads any browser-supported image (png, jpg, webp, jfif etc) and re-encodes
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    let mime = `image/${outFormat === 'jpg' ? 'jpeg' : outFormat}`;
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('canvas to blob failed'));
+                    }, mime, 0.92);
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function handleHeicToImage(file, outFormat) {
+            // uses heic2any
+            const resultBlob = await heic2any({ blob: file, toType: `image/${outFormat}`, quality: 0.9 });
+            return resultBlob;
+        }
+
+        async function handleSvgConversion(file, outFormat) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    let mime = `image/${outFormat === 'jpg' ? 'jpeg' : outFormat}`;
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(blob);
+                        else reject();
+                    }, mime, 0.92);
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function handlePdfToJpg(file) {
+            // load first page as jpeg
+            const pdfjs = window.pdfjsLib;
+            const arrBuf = await file.arrayBuffer();
+            const pdf = await pdfjs.getDocument({ data: arrBuf }).promise;
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            return new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+        }
+
+        async function handleJpgToPdf(file) {
+            // use pdf-lib
+            const { PDFDocument, rgb } = PDFLib;
+            const imgBytes = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.create();
+            let image;
+            if (file.type.includes('png')) {
+                image = await pdfDoc.embedPng(imgBytes);
+            } else {
+                image = await pdfDoc.embedJpg(imgBytes);
+            }
+            const page = pdfDoc.addPage([image.width, image.height]);
+            page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+            const pdfBytes = await pdfDoc.save();
+            return new Blob([pdfBytes], { type: 'application/pdf' });
+        }
+
+        async function handleHeicToPdf(file) {
+            // convert heic to jpg blob then to pdf
+            const jpgBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+            const { PDFDocument } = PDFLib;
+            const imgBytes = await jpgBlob.arrayBuffer();
+            const pdfDoc = await PDFDocument.create();
+            const image = await pdfDoc.embedJpg(imgBytes);
+            const page = pdfDoc.addPage([image.width, image.height]);
+            page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+            const pdfBytes = await pdfDoc.save();
+            return new Blob([pdfBytes], { type: 'application/pdf' });
+        }
+
+        // for jfif, webp etc same as generic image
+        window.PDFLib = PDFLib; // make available
+    })();
+</script>
+<!-- ensure pdf.js worker -->
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+</script>
+</body>
+</html>
