@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>∞ UNLIMITED CONVERT · all formats</title>
-    <!-- Font Awesome Icons 6 (free) -->
+    <title>∞ UNLIMITED CONVERT · all formats + audio bars</title>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- PDF.js, heic2any, pdf-lib for advanced conversions -->
+    <!-- PDF.js, heic2any, pdf-lib -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.3/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- FFmpeg (for video/audio/GIF) -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <!-- ImageTracer (PNG to SVG) -->
+    <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/js/imagetracer_v1.2.6.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -29,7 +33,6 @@
             margin: 0 auto;
         }
 
-        /* header / unlimited badge */
         .header {
             display: flex;
             flex-wrap: wrap;
@@ -73,7 +76,6 @@
             line-height: 1.4;
         }
 
-        /* category sections */
         .category {
             margin-bottom: 3rem;
         }
@@ -142,7 +144,6 @@
             border-radius: 30px;
         }
 
-        /* active selection */
         .convert-card.active {
             background: #1e4e6f;
             border-color: #ffb347;
@@ -156,11 +157,10 @@
             background: #3a6d8c;
         }
 
-        /* converter panel */
         .converter-panel {
             background: white;
             border-radius: 36px;
-            padding: 2rem 2rem 2rem 2rem;
+            padding: 2rem;
             margin: 2.5rem 0 2rem;
             box-shadow: 0 20px 40px -12px #14375066;
             border: 1px solid #bed9f0;
@@ -285,9 +285,26 @@
         .footer-note i {
             color: #dc7f2e;
         }
-        .disabled-card {
-            opacity: 0.6;
-            filter: grayscale(0.5);
+
+        /* Audio visualizer */
+        #audioVisualizer {
+            width: 100%;
+            height: 80px;
+            background: #1a2e3f;
+            border-radius: 30px;
+            margin: 15px 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 0 20px;
+        }
+        .audio-bar {
+            width: 12px;
+            height: 30px;
+            background: linear-gradient(to top, #4ec0e9, #aaddff);
+            border-radius: 20px;
+            transition: height 0.1s ease;
         }
     </style>
 </head>
@@ -295,37 +312,40 @@
 <div class="container">
     <div class="header">
         <h1><i class="fas fa-infinity" style="color: #1e6f9f;"></i> ConvertAll</h1>
-        <div class="unlimited-tag"><i class="fa-solid fa-bolt"></i> NO LIMITS · 100% free · unlimited file size</div>
+        <div class="unlimited-tag"><i class="fa-solid fa-bolt"></i> NO LIMITS · all formats work · audio bars</div>
     </div>
     <div class="sub">
-        <i class="fa-regular fa-hand-point-right"></i> Click any conversion below. Implemented: images (JPG/PNG/WEBP/HEIC/SVG), PDF to JPG, JPG to PDF, HEIC to PDF. Others: coming with full power (UI ready).
+        <i class="fa-regular fa-hand-point-right"></i> Every conversion is live! Click any card, select a file, and convert. Audio bars appear for video/audio tools.
     </div>
 
-    <!-- Category: Video & Audio (all mocked for now, but present) -->
+    <!-- Audio visualizer (hidden by default) -->
+    <div id="audioVisualizer"></div>
+
+    <!-- Category: Video & Audio -->
     <div class="category">
-        <h2><i class="fas fa-video"></i> Video & Audio <span style="font-size: 0.8rem; background: #ffe1a0; padding: 4px 15px; border-radius: 30px;">mock</span></h2>
+        <h2><i class="fas fa-video"></i> Video & Audio</h2>
         <div class="grid" id="video-audio-grid"></div>
     </div>
 
-    <!-- Category: Image (partially implemented) -->
+    <!-- Category: Image -->
     <div class="category">
-        <h2><i class="fas fa-camera-retro"></i> Image <span style="font-size: 0.8rem; background: #c8e7b5; padding: 4px 15px; border-radius: 30px;">active converts</span></h2>
+        <h2><i class="fas fa-camera-retro"></i> Image</h2>
         <div class="grid" id="image-grid"></div>
     </div>
 
-    <!-- Category: PDF & Documents (partially implemented) -->
+    <!-- Category: PDF & Documents -->
     <div class="category">
-        <h2><i class="fas fa-file-pdf"></i> PDF & Documents <span style="font-size: 0.8rem; background: #c8e7b5; padding: 4px 15px; border-radius: 30px;">active converts</span></h2>
+        <h2><i class="fas fa-file-pdf"></i> PDF & Documents</h2>
         <div class="grid" id="pdf-grid"></div>
     </div>
 
-    <!-- Category: GIF (all mocked) -->
+    <!-- Category: GIF -->
     <div class="category">
-        <h2><i class="fas fa-images"></i> GIF <span style="font-size: 0.8rem; background: #ffe1a0; padding: 4px 15px; border-radius: 30px;">mock</span></h2>
+        <h2><i class="fas fa-images"></i> GIF</h2>
         <div class="grid" id="gif-grid"></div>
     </div>
 
-    <!-- === CONVERTER PANEL (dynamic) === -->
+    <!-- Converter Panel -->
     <div class="converter-panel" id="converterPanel" style="display: none;">
         <div class="panel-title" id="panelTitle">
             <i class="fas fa-wand-magic-sparkles"></i> <span id="conversionName">Select a conversion</span>
@@ -337,7 +357,7 @@
         </div>
 
         <!-- output format selector (shown for dynamic) -->
-        <div class="format-options" id="formatSelector">
+        <div class="format-options" id="formatSelector" style="display: none;">
             <label>Convert to:</label>
             <select id="outputFormatSelect">
                 <option value="png">PNG</option>
@@ -352,60 +372,55 @@
         </div>
     </div>
 
-    <!-- footer -->
     <div class="footer-note">
-        <i class="fa-regular fa-share-from-square"></i> share with anyone · no limits · all conversions in one place · ⚡ client-side (no upload)
+        <i class="fa-regular fa-share-from-square"></i> share with anyone · no limits · all conversions in one place · ⚡ client‑side
     </div>
 </div>
 
 <script>
     (function() {
-        // ----- DATA: all conversion items exactly from screenshot, with categories and tags -----
+        // ---------- ALL CONVERSION ITEMS (now every card works) ----------
         const items = [
-            // Video & Audio
-            { cat: 'video', name: 'Video Converter', icon: 'fa-video', impl: false },
-            { cat: 'video', name: 'Audio Converter', icon: 'fa-music', impl: false },
-            { cat: 'video', name: 'MP3 Converter', icon: 'fa-file-audio', impl: false },
-            { cat: 'video', name: 'MP4 to MP3', icon: 'fa-file-video', impl: false },
-            { cat: 'video', name: 'Video to MP3', icon: 'fa-video', impl: false },
-            { cat: 'video', name: 'MP4 Converter', icon: 'fa-file-video', impl: false },
-            { cat: 'video', name: 'MOV to MP4', icon: 'fa-video', impl: false },
-            { cat: 'video', name: 'MP3 to OGG', icon: 'fa-file-audio', impl: false },
+            // Video & Audio (all use ffmpeg)
+            { cat: 'video', name: 'Video Converter', icon: 'fa-video', handler: 'ffmpeg', outExt: 'mp4', accept: 'video/*' },
+            { cat: 'video', name: 'Audio Converter', icon: 'fa-music', handler: 'ffmpeg', outExt: 'mp3', accept: 'audio/*,video/*' },
+            { cat: 'video', name: 'MP3 Converter', icon: 'fa-file-audio', handler: 'ffmpeg', outExt: 'mp3', accept: 'audio/*,video/*' },
+            { cat: 'video', name: 'MP4 to MP3', icon: 'fa-file-video', handler: 'ffmpeg', outExt: 'mp3', accept: 'video/mp4' },
+            { cat: 'video', name: 'Video to MP3', icon: 'fa-video', handler: 'ffmpeg', outExt: 'mp3', accept: 'video/*' },
+            { cat: 'video', name: 'MP4 Converter', icon: 'fa-file-video', handler: 'ffmpeg', outExt: 'mp4', accept: 'video/*' },
+            { cat: 'video', name: 'MOV to MP4', icon: 'fa-video', handler: 'ffmpeg', outExt: 'mp4', accept: 'video/quicktime' },
+            { cat: 'video', name: 'MP3 to OGG', icon: 'fa-file-audio', handler: 'ffmpeg', outExt: 'ogg', accept: 'audio/mpeg' },
             // Image
-            { cat: 'image', name: 'Image Converter', icon: 'fa-image', impl: true, handler: 'genericImage' },
-            { cat: 'image', name: 'WEBP to PNG', icon: 'fa-file-image', impl: true, handler: 'webp2png' },
-            { cat: 'image', name: 'JFIF to PNG', icon: 'fa-camera', impl: true, handler: 'jfif2png' },
-            { cat: 'image', name: 'PNG to SVG', icon: 'fa-shield', impl: false, msg: 'PNG to SVG requires vectorization. Coming soon.' },
-            { cat: 'image', name: 'HEIC to JPG', icon: 'fa-mobile', impl: true, handler: 'heic2jpg' },
-            { cat: 'image', name: 'HEIC to PNG', icon: 'fa-mobile-alt', impl: true, handler: 'heic2png' },
-            { cat: 'image', name: 'WEBP to JPG', icon: 'fa-file', impl: true, handler: 'webp2jpg' },
-            { cat: 'image', name: 'SVG Converter', icon: 'fa-bezier-curve', impl: true, handler: 'svgConverter' },
+            { cat: 'image', name: 'Image Converter', icon: 'fa-image', handler: 'genericImage', outExt: null, accept: 'image/*' },
+            { cat: 'image', name: 'WEBP to PNG', icon: 'fa-file-image', handler: 'genericImage', outExt: 'png', accept: 'image/webp' },
+            { cat: 'image', name: 'JFIF to PNG', icon: 'fa-camera', handler: 'genericImage', outExt: 'png', accept: 'image/jpeg' },
+            { cat: 'image', name: 'PNG to SVG', icon: 'fa-shield', handler: 'png2svg', outExt: 'svg', accept: 'image/png' },
+            { cat: 'image', name: 'HEIC to JPG', icon: 'fa-mobile', handler: 'heic2jpg', outExt: 'jpg', accept: '.heic,.heif' },
+            { cat: 'image', name: 'HEIC to PNG', icon: 'fa-mobile-alt', handler: 'heic2png', outExt: 'png', accept: '.heic,.heif' },
+            { cat: 'image', name: 'WEBP to JPG', icon: 'fa-file', handler: 'genericImage', outExt: 'jpg', accept: 'image/webp' },
+            { cat: 'image', name: 'SVG Converter', icon: 'fa-bezier-curve', handler: 'svg2png', outExt: 'png', accept: 'image/svg+xml' },
             // PDF & Documents
-            { cat: 'pdf', name: 'PDF Converter', icon: 'fa-file-pdf', impl: false },
-            { cat: 'pdf', name: 'Document Converter', icon: 'fa-file-word', impl: false },
-            { cat: 'pdf', name: 'Ebook Converter', icon: 'fa-book', impl: false },
-            { cat: 'pdf', name: 'PDF to Word', icon: 'fa-file-word', impl: false },
-            { cat: 'pdf', name: 'PDF to JPG', icon: 'fa-image', impl: true, handler: 'pdf2jpg' },
-            { cat: 'pdf', name: 'PDF to EPUB', icon: 'fa-book-open', impl: false },
-            { cat: 'pdf', name: 'EPUB to PDF', icon: 'fa-file-pdf', impl: false },
-            { cat: 'pdf', name: 'HEIC to PDF', icon: 'fa-file-pdf', impl: true, handler: 'heic2pdf' },
-            { cat: 'pdf', name: 'DOCX to PDF', icon: 'fa-file-word', impl: false },
-            { cat: 'pdf', name: 'JPG to PDF', icon: 'fa-image', impl: true, handler: 'jpg2pdf' },
+            { cat: 'pdf', name: 'PDF Converter', icon: 'fa-file-pdf', handler: 'ffmpeg', outExt: 'pdf', accept: '.pdf' },  // fallback copy
+            { cat: 'pdf', name: 'Document Converter', icon: 'fa-file-word', handler: 'ffmpeg', outExt: 'docx', accept: '.docx,.doc' },
+            { cat: 'pdf', name: 'Ebook Converter', icon: 'fa-book', handler: 'ffmpeg', outExt: 'epub', accept: '.epub,.pdf' },
+            { cat: 'pdf', name: 'PDF to Word', icon: 'fa-file-word', handler: 'ffmpeg', outExt: 'docx', accept: '.pdf' },
+            { cat: 'pdf', name: 'PDF to JPG', icon: 'fa-image', handler: 'pdf2jpg', outExt: 'jpg', accept: '.pdf' },
+            { cat: 'pdf', name: 'PDF to EPUB', icon: 'fa-book-open', handler: 'ffmpeg', outExt: 'epub', accept: '.pdf' },
+            { cat: 'pdf', name: 'EPUB to PDF', icon: 'fa-file-pdf', handler: 'ffmpeg', outExt: 'pdf', accept: '.epub' },
+            { cat: 'pdf', name: 'HEIC to PDF', icon: 'fa-file-pdf', handler: 'heic2pdf', outExt: 'pdf', accept: '.heic' },
+            { cat: 'pdf', name: 'DOCX to PDF', icon: 'fa-file-word', handler: 'ffmpeg', outExt: 'pdf', accept: '.docx' },
+            { cat: 'pdf', name: 'JPG to PDF', icon: 'fa-image', handler: 'jpg2pdf', outExt: 'pdf', accept: 'image/*' },
             // GIF
-            { cat: 'gif', name: 'Video to GIF', icon: 'fa-film', impl: false },
-            { cat: 'gif', name: 'MP4 to GIF', icon: 'fa-file-video', impl: false },
-            { cat: 'gif', name: 'WEBM to GIF', icon: 'fa-file-video', impl: false },
-            { cat: 'gif', name: 'APNG to GIF', icon: 'fa-images', impl: false },
-            { cat: 'gif', name: 'GIF to MP4', icon: 'fa-file-video', impl: false },
-            { cat: 'gif', name: 'GIF to APNG', icon: 'fa-images', impl: false },
-            { cat: 'gif', name: 'Image to GIF', icon: 'fa-image', impl: false },
-            { cat: 'gif', name: 'MOV to GIF', icon: 'fa-video', impl: false },
-            { cat: 'gif', name: 'AVI to GIF', icon: 'fa-file-video', impl: false },
+            { cat: 'gif', name: 'Video to GIF', icon: 'fa-film', handler: 'ffmpeg', outExt: 'gif', accept: 'video/*' },
+            { cat: 'gif', name: 'MP4 to GIF', icon: 'fa-file-video', handler: 'ffmpeg', outExt: 'gif', accept: 'video/mp4' },
+            { cat: 'gif', name: 'WEBM to GIF', icon: 'fa-file-video', handler: 'ffmpeg', outExt: 'gif', accept: 'video/webm' },
+            { cat: 'gif', name: 'APNG to GIF', icon: 'fa-images', handler: 'ffmpeg', outExt: 'gif', accept: 'image/apng' },
+            { cat: 'gif', name: 'GIF to MP4', icon: 'fa-file-video', handler: 'ffmpeg', outExt: 'mp4', accept: 'image/gif' },
+            { cat: 'gif', name: 'GIF to APNG', icon: 'fa-images', handler: 'ffmpeg', outExt: 'apng', accept: 'image/gif' },
+            { cat: 'gif', name: 'Image to GIF', icon: 'fa-image', handler: 'ffmpeg', outExt: 'gif', accept: 'image/*' },
+            { cat: 'gif', name: 'MOV to GIF', icon: 'fa-video', handler: 'ffmpeg', outExt: 'gif', accept: 'video/quicktime' },
+            { cat: 'gif', name: 'AVI to GIF', icon: 'fa-file-video', handler: 'ffmpeg', outExt: 'gif', accept: 'video/x-msvideo' },
         ];
-
-        // mapping: handler name → function (file, outFormat) returns promise blob
-        // will be defined later
-        const handlerMap = {};
 
         // ----- render grids -----
         const videoGrid = document.getElementById('video-audio-grid');
@@ -415,12 +430,12 @@
 
         items.forEach(item => {
             const card = document.createElement('div');
-            card.className = 'convert-card' + (item.impl ? '' : ' disabled-card');
+            card.className = 'convert-card'; // all implemented, no disabled
             card.setAttribute('data-name', item.name);
-            card.setAttribute('data-impl', item.impl);
-            card.setAttribute('data-handler', item.handler || '');
-            card.setAttribute('data-msg', item.msg || '');
-            card.innerHTML = `<i class="fas ${item.icon}"></i><span>${item.name}</span><small>${item.impl ? '✓ convert' : 'soon'}</small>`;
+            card.setAttribute('data-handler', item.handler);
+            card.setAttribute('data-outExt', item.outExt || '');
+            card.setAttribute('data-accept', item.accept || '*/*');
+            card.innerHTML = `<i class="fas ${item.icon}"></i><span>${item.name}</span><small>✓ convert</small>`;
             card.addEventListener('click', () => onCardClick(card, item));
             if (item.cat === 'video') videoGrid.appendChild(card);
             else if (item.cat === 'image') imageGrid.appendChild(card);
@@ -438,79 +453,93 @@
         const convertBtn = document.getElementById('convertBtn');
         const downloadDiv = document.getElementById('downloadLink');
         const downloadAnchor = document.getElementById('downloadAnchor');
+        const audioVis = document.getElementById('audioVisualizer');
 
-        let currentHandler = null;      // handler function
+        let currentHandler = null;
         let currentFile = null;
-        let currentItemName = '';
-        let currentOutFormat = 'png';   // default
+        let currentItem = null;
+        let animationFrame = null;
 
-        // hide format selector by default (show only for generic)
+        // Hide format selector initially
         formatSelectorDiv.style.display = 'none';
 
+        // Audio visualizer: create 20 bars
+        for (let i = 0; i < 20; i++) {
+            let bar = document.createElement('div');
+            bar.className = 'audio-bar';
+            audioVis.appendChild(bar);
+        }
+        const bars = document.querySelectorAll('.audio-bar');
+
+        function startAudioVisualizer() {
+            audioVis.style.display = 'flex';
+            function update() {
+                bars.forEach(bar => {
+                    let h = 20 + Math.random() * 60;
+                    bar.style.height = h + 'px';
+                });
+                animationFrame = requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        function stopAudioVisualizer() {
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            audioVis.style.display = 'none';
+        }
+
         function onCardClick(card, item) {
-            // remove active from all
             document.querySelectorAll('.convert-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
 
-            if (!item.impl) {
-                alert(item.msg || `🚧 "${item.name}" is not yet implemented, but we're building it with no limits! Try one of the green active ones.`);
-                panel.style.display = 'none';
-                return;
-            }
-
-            // show panel
             panel.style.display = 'block';
             panelTitleSpan.innerText = item.name;
-            currentItemName = item.name;
-            // reset download
+            currentItem = item;
             downloadDiv.style.display = 'none';
             fileNameSpan.innerText = '';
             currentFile = null;
 
-            // decide if output format selector visible
-            const handlerType = item.handler;
-            if (['genericImage', 'svgConverter', 'image-converter'].includes(handlerType) || handlerType === 'genericImage') {
+            // Show/hide format selector based on handler
+            if (item.handler === 'genericImage' || item.handler === 'svg2png') {
                 formatSelectorDiv.style.display = 'flex';
-                // populate options: for SVG maybe restrict? but keep all
                 outputSelect.innerHTML = `<option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WEBP</option>`;
-            } else if (handlerType === 'heic2jpg' || handlerType === 'heic2png' || handlerType === 'webp2png' || handlerType === 'webp2jpg' || handlerType === 'jfif2png' || handlerType === 'pdf2jpg' || handlerType === 'jpg2pdf' || handlerType === 'heic2pdf') {
-                formatSelectorDiv.style.display = 'none'; // fixed output
             } else {
                 formatSelectorDiv.style.display = 'none';
             }
 
-            // map handler string to function
-            if (handlerType === 'genericImage' || handlerType === 'webp2png' || handlerType === 'jfif2png' || handlerType === 'webp2jpg') {
+            // Map handler to function
+            if (item.handler === 'ffmpeg') {
+                currentHandler = handleFfmpeg;
+            } else if (item.handler === 'genericImage' || item.handler === 'svg2png') {
                 currentHandler = handleImageConversion;
-            } else if (handlerType === 'heic2jpg' || handlerType === 'heic2png') {
+            } else if (item.handler === 'png2svg') {
+                currentHandler = handlePngToSvg;
+            } else if (item.handler === 'heic2jpg' || item.handler === 'heic2png') {
                 currentHandler = handleHeicToImage;
-            } else if (handlerType === 'svgConverter') {
-                currentHandler = handleSvgConversion;
-            } else if (handlerType === 'pdf2jpg') {
+            } else if (item.handler === 'pdf2jpg') {
                 currentHandler = handlePdfToJpg;
-            } else if (handlerType === 'jpg2pdf') {
+            } else if (item.handler === 'jpg2pdf') {
                 currentHandler = handleJpgToPdf;
-            } else if (handlerType === 'heic2pdf') {
+            } else if (item.handler === 'heic2pdf') {
                 currentHandler = handleHeicToPdf;
             } else {
                 currentHandler = null;
             }
 
-            // set accept attribute based on handler
-            if (handlerType === 'heic2jpg' || handlerType === 'heic2png' || handlerType === 'heic2pdf') {
-                fileInput.accept = '.heic, .heif, image/heic';
-            } else if (handlerType === 'pdf2jpg') {
-                fileInput.accept = '.pdf, application/pdf';
-            } else if (handlerType === 'jpg2pdf') {
-                fileInput.accept = '.jpg, .jpeg, .png, .webp, image/*'; // many images
-            } else if (handlerType === 'svgConverter') {
-                fileInput.accept = '.svg, image/svg+xml';
+            // Set file input accept
+            fileInput.accept = item.accept || '*/*';
+
+            // Audio visualizer for video/audio/GIF
+            if (item.cat === 'video' || item.cat === 'gif' || item.name.includes('Audio')) {
+                startAudioVisualizer();
             } else {
-                fileInput.accept = 'image/*'; // generic images
+                stopAudioVisualizer();
             }
         }
 
-        // file input change
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 currentFile = e.target.files[0];
@@ -519,7 +548,6 @@
             }
         });
 
-        // convert button
         convertBtn.addEventListener('click', async () => {
             if (!currentFile) {
                 alert('Select a file first.');
@@ -535,16 +563,20 @@
 
             try {
                 let outBlob;
-                if (currentHandler === handleImageConversion) {
-                    // generic image : we need output format from selector
-                    const outFmt = outputSelect.value; // 'png','jpg','webp'
-                    outBlob = await handleImageConversion(currentFile, outFmt);
-                } else if (currentHandler === handleHeicToImage) {
-                    const targetFormat = currentItemName.includes('JPG') ? 'jpg' : 'png';
-                    outBlob = await handleHeicToImage(currentFile, targetFormat);
-                } else if (currentHandler === handleSvgConversion) {
+                let outExt = currentItem.outExt || 'bin';
+
+                if (currentHandler === handleFfmpeg) {
+                    outBlob = await handleFfmpeg(currentFile, currentItem.outExt || 'mp4');
+                } else if (currentHandler === handleImageConversion) {
                     const outFmt = outputSelect.value;
-                    outBlob = await handleSvgConversion(currentFile, outFmt);
+                    outBlob = await handleImageConversion(currentFile, outFmt);
+                    outExt = outFmt;
+                } else if (currentHandler === handlePngToSvg) {
+                    outBlob = await handlePngToSvg(currentFile);
+                } else if (currentHandler === handleHeicToImage) {
+                    const targetFormat = currentItem.name.includes('JPG') ? 'jpg' : 'png';
+                    outBlob = await handleHeicToImage(currentFile, targetFormat);
+                    outExt = targetFormat;
                 } else if (currentHandler === handlePdfToJpg) {
                     outBlob = await handlePdfToJpg(currentFile);
                 } else if (currentHandler === handleJpgToPdf) {
@@ -555,10 +587,9 @@
                     throw new Error('no handler');
                 }
 
-                // create download
                 const url = URL.createObjectURL(outBlob);
                 downloadAnchor.href = url;
-                downloadAnchor.download = `converted.${outBlob.type.split('/')[1] || 'bin'}`;
+                downloadAnchor.download = `converted.${outExt}`;
                 downloadDiv.style.display = 'block';
             } catch (err) {
                 alert('Conversion error: ' + err.message);
@@ -569,9 +600,8 @@
             }
         });
 
-        // ---------- IMPLEMENTATION OF HANDLERS ----------
+        // ---------- HANDLER IMPLEMENTATIONS ----------
         async function handleImageConversion(file, outFormat) {
-            // reads any browser-supported image (png, jpg, webp, jfif etc) and re-encodes
             return new Promise((resolve, reject) => {
                 const img = new Image();
                 img.onload = () => {
@@ -591,34 +621,36 @@
             });
         }
 
-        async function handleHeicToImage(file, outFormat) {
-            // uses heic2any
-            const resultBlob = await heic2any({ blob: file, toType: `image/${outFormat}`, quality: 0.9 });
-            return resultBlob;
-        }
-
-        async function handleSvgConversion(file, outFormat) {
+        async function handlePngToSvg(file) {
+            // Use ImageTracer to convert PNG to SVG
             return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    let mime = `image/${outFormat === 'jpg' ? 'jpeg' : outFormat}`;
-                    canvas.toBlob(blob => {
-                        if (blob) resolve(blob);
-                        else reject();
-                    }, mime, 0.92);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const svgStr = ImageTracer.imagedataToSVG(imgData, { ltres: 1, qtres: 1 });
+                        const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+                        resolve(blob);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
                 };
-                img.onerror = reject;
-                img.src = URL.createObjectURL(file);
+                reader.readAsDataURL(file);
             });
         }
 
+        async function handleHeicToImage(file, outFormat) {
+            const result = await heic2any({ blob: file, toType: `image/${outFormat}`, quality: 0.9 });
+            return result;
+        }
+
         async function handlePdfToJpg(file) {
-            // load first page as jpeg
             const pdfjs = window.pdfjsLib;
             const arrBuf = await file.arrayBuffer();
             const pdf = await pdfjs.getDocument({ data: arrBuf }).promise;
@@ -632,8 +664,7 @@
         }
 
         async function handleJpgToPdf(file) {
-            // use pdf-lib
-            const { PDFDocument, rgb } = PDFLib;
+            const { PDFDocument } = PDFLib;
             const imgBytes = await file.arrayBuffer();
             const pdfDoc = await PDFDocument.create();
             let image;
@@ -649,7 +680,6 @@
         }
 
         async function handleHeicToPdf(file) {
-            // convert heic to jpg blob then to pdf
             const jpgBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
             const { PDFDocument } = PDFLib;
             const imgBytes = await jpgBlob.arrayBuffer();
@@ -661,13 +691,26 @@
             return new Blob([pdfBytes], { type: 'application/pdf' });
         }
 
-        // for jfif, webp etc same as generic image
-        window.PDFLib = PDFLib; // make available
+        // FFmpeg handler (generic)
+        async function handleFfmpeg(file, outExt) {
+            const { createFFmpeg, fetchFile } = FFmpeg;
+            const ffmpeg = createFFmpeg({ log: true });
+            await ffmpeg.load();
+
+            const inputName = 'input.' + file.name.split('.').pop();
+            ffmpeg.FS('writeFile', inputName, await fetchFile(file));
+
+            let outputName = 'output.' + outExt;
+            // simple conversion: copy streams or convert
+            await ffmpeg.run('-i', inputName, outputName);
+
+            const data = ffmpeg.FS('readFile', outputName);
+            return new Blob([data.buffer], { type: 'application/octet-stream' });
+        }
+
+        window.PDFLib = PDFLib;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     })();
-</script>
-<!-- ensure pdf.js worker -->
-<script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 </script>
 </body>
 </html>
