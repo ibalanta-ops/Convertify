@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>∞ UNLIMITED CONVERT · choose any format</title>
+    <title>∞ CONVERT · all formats · audio bars</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- PDF.js, heic2any, pdf-lib -->
@@ -15,7 +15,6 @@
     <!-- ImageTracer (PNG to SVG) -->
     <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/js/imagetracer_v1.2.6.min.js"></script>
     <style>
-        /* (styles unchanged) */
         * {
             margin: 0;
             padding: 0;
@@ -166,6 +165,11 @@
             margin: 1.8rem 0;
             border: 2px dashed #6d9eb0;
             text-align: center;
+            transition: background 0.2s;
+        }
+        .file-area.dragover {
+            background: #e1effb;
+            border-color: #3080c0;
         }
         .file-label {
             font-size: 1.2rem;
@@ -283,45 +287,31 @@
 <div class="container">
     <div class="header">
         <h1><i class="fas fa-infinity" style="color: #1e6f9f;"></i> ConvertAll</h1>
-        <div class="unlimited-tag"><i class="fa-solid fa-bolt"></i> NO LIMITS · choose output format</div>
+        <div class="unlimited-tag"><i class="fa-solid fa-bolt"></i> NO LIMITS · choose any format</div>
     </div>
     <div class="sub">
-        <i class="fa-regular fa-hand-point-right"></i> Every tool lets you pick the output format. Audio bars show real waveform.
+        <i class="fa-regular fa-hand-point-right"></i> Every conversion works. Pick a tool, choose output format, and drag or click. Audio bars show real waveform.
     </div>
 
-    <!-- Audio visualizer container -->
+    <!-- Audio visualizer -->
     <div id="audioVisualizer"></div>
 
     <!-- Category grids -->
-    <div class="category">
-        <h2><i class="fas fa-video"></i> Video & Audio</h2>
-        <div class="grid" id="video-audio-grid"></div>
-    </div>
-    <div class="category">
-        <h2><i class="fas fa-camera-retro"></i> Image</h2>
-        <div class="grid" id="image-grid"></div>
-    </div>
-    <div class="category">
-        <h2><i class="fas fa-file-pdf"></i> PDF & Documents</h2>
-        <div class="grid" id="pdf-grid"></div>
-    </div>
-    <div class="category">
-        <h2><i class="fas fa-images"></i> GIF</h2>
-        <div class="grid" id="gif-grid"></div>
-    </div>
+    <div class="category"><h2><i class="fas fa-video"></i> Video & Audio</h2><div class="grid" id="video-audio-grid"></div></div>
+    <div class="category"><h2><i class="fas fa-camera-retro"></i> Image</h2><div class="grid" id="image-grid"></div></div>
+    <div class="category"><h2><i class="fas fa-file-pdf"></i> PDF & Documents</h2><div class="grid" id="pdf-grid"></div></div>
+    <div class="category"><h2><i class="fas fa-images"></i> GIF</h2><div class="grid" id="gif-grid"></div></div>
 
     <!-- Converter Panel -->
     <div class="converter-panel" id="converterPanel" style="display: none;">
-        <div class="panel-title" id="panelTitle">
-            <i class="fas fa-wand-magic-sparkles"></i> <span id="conversionName">Select a conversion</span>
-        </div>
-        <div class="file-area">
+        <div class="panel-title"><i class="fas fa-wand-magic-sparkles"></i> <span id="conversionName">Select a conversion</span></div>
+        <div class="file-area" id="dropArea">
             <label for="fileInput" class="file-label" id="fileLabel"><i class="fas fa-cloud-upload-alt"></i> choose file</label>
             <input type="file" id="fileInput">
             <div style="margin-top: 10px; color: #1e4e6f;" id="fileName"></div>
+            <div style="margin-top: 8px; font-size: 0.9rem; color: #3a6d8c;">or drag & drop here</div>
         </div>
 
-        <!-- output format selector (now always visible) -->
         <div class="format-options" id="formatSelector">
             <label><i class="fa-solid fa-arrow-right-to-bracket"></i> Convert to:</label>
             <select id="outputFormatSelect"></select>
@@ -341,7 +331,7 @@
 
 <script>
     (function() {
-        // ---------- ALL CONVERSION ITEMS (every card works, with format options) ----------
+        // ---------- ALL CONVERSION ITEMS (every card from your screenshot) ----------
         const items = [
             // Video & Audio
             { cat: 'video', name: 'Video Converter', icon: 'fa-video', handler: 'audioExtract', formats: ['wav', 'mp4', 'webm', 'gif'], accept: 'video/*' },
@@ -384,7 +374,7 @@
             { cat: 'gif', name: 'AVI to GIF', icon: 'fa-file-video', handler: 'video2gif', formats: ['gif'], accept: 'video/x-msvideo' },
         ];
 
-        // Render grids (same as before)
+        // ----- render grids -----
         const videoGrid = document.getElementById('video-audio-grid');
         const imageGrid = document.getElementById('image-grid');
         const pdfGrid = document.getElementById('pdf-grid');
@@ -417,6 +407,7 @@
         const downloadAnchor = document.getElementById('downloadAnchor');
         const audioVis = document.getElementById('audioVisualizer');
         const warningDiv = document.getElementById('conversionWarning');
+        const dropArea = document.getElementById('dropArea');
 
         let currentHandler = null;
         let currentFile = null;
@@ -434,6 +425,28 @@
         }
         const bars = document.querySelectorAll('.audio-bar');
 
+        // Drag & drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'));
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'));
+        });
+        dropArea.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+
         function stopVisualizer() {
             if (raf) { cancelAnimationFrame(raf); raf = null; }
             if (source) { try { source.stop(); } catch (e) {} source = null; }
@@ -450,11 +463,10 @@
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 64;
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-            const fileReader = new FileReader();
-            fileReader.onload = (e) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
                 audioCtx.decodeAudioData(e.target.result, (buffer) => {
                     source = audioCtx.createBufferSource();
                     source.buffer = buffer;
@@ -462,12 +474,9 @@
                     analyser.connect(audioCtx.destination);
                     source.start();
                     visualize();
-                }, (err) => {
-                    console.warn('Audio decode failed', err);
-                    audioVis.style.display = 'none';
-                });
+                }, () => audioVis.style.display = 'none');
             };
-            fileReader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(file);
 
             function visualize() {
                 if (!analyser) return;
@@ -480,6 +489,19 @@
             }
         }
 
+        function handleFileSelect(file) {
+            currentFile = file;
+            fileNameSpan.innerText = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            downloadDiv.style.display = 'none';
+            if (currentItem && (currentItem.cat === 'video' || currentItem.cat === 'gif' || currentItem.name.includes('Audio'))) {
+                startVisualizerWithFile(file);
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFileSelect(e.target.files[0]);
+        });
+
         function onCardClick(card, item) {
             document.querySelectorAll('.convert-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
@@ -491,6 +513,7 @@
             fileNameSpan.innerText = '';
             currentFile = null;
             warningDiv.style.display = 'none';
+            stopVisualizer();
 
             // Populate format dropdown
             outputSelect.innerHTML = '';
@@ -501,45 +524,25 @@
                 outputSelect.appendChild(opt);
             });
 
-            // Map handler to function
-            if (item.handler === 'audioExtract') {
-                currentHandler = handleAudioExtract;
-            } else if (item.handler === 'video2gif') {
-                currentHandler = handleVideoToGif;
-            } else if (item.handler === 'image2gif') {
-                currentHandler = handleImageToGif;
-            } else if (item.handler === 'passthrough') {
-                currentHandler = handlePassthrough;
-            } else if (item.handler === 'genericImage' || item.handler === 'svg2png') {
-                currentHandler = handleImageConversion;
-            } else if (item.handler === 'png2svg') {
-                currentHandler = handlePngToSvg;
-            } else if (item.handler === 'heic2jpg' || item.handler === 'heic2png') {
-                currentHandler = handleHeicToImage;
-            } else if (item.handler === 'pdf2jpg') {
-                currentHandler = handlePdfToJpg;
-            } else if (item.handler === 'jpg2pdf') {
-                currentHandler = handleJpgToPdf;
-            } else if (item.handler === 'heic2pdf') {
-                currentHandler = handleHeicToPdf;
-            } else {
-                currentHandler = null;
-            }
+            // Map handler
+            const handlerMap = {
+                audioExtract: handleAudioExtract,
+                video2gif: handleVideoToGif,
+                image2gif: handleImageToGif,
+                passthrough: handlePassthrough,
+                genericImage: handleImageConversion,
+                svg2png: handleImageConversion,
+                png2svg: handlePngToSvg,
+                heic2jpg: handleHeicToImage,
+                heic2png: handleHeicToImage,
+                pdf2jpg: handlePdfToJpg,
+                jpg2pdf: handleJpgToPdf,
+                heic2pdf: handleHeicToPdf,
+            };
+            currentHandler = handlerMap[item.handler] || null;
 
             fileInput.accept = item.accept || '*/*';
-            stopVisualizer();
         }
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                currentFile = e.target.files[0];
-                fileNameSpan.innerText = `📄 ${currentFile.name} (${(currentFile.size / 1024).toFixed(1)} KB)`;
-                downloadDiv.style.display = 'none';
-                if (currentItem && (currentItem.cat === 'video' || currentItem.cat === 'gif' || currentItem.name.includes('Audio'))) {
-                    startVisualizerWithFile(currentFile);
-                }
-            }
-        });
 
         convertBtn.addEventListener('click', async () => {
             if (!currentFile) { alert('Select a file first.'); return; }
@@ -594,7 +597,7 @@
             }
         });
 
-        // ---------- HANDLERS (updated to respect targetFormat) ----------
+        // ---------- HANDLERS ----------
         async function handleImageConversion(file, outFormat) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -616,7 +619,6 @@
         }
 
         async function handlePngToSvg(file, outFormat) {
-            // PNG to SVG only supports SVG
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -639,8 +641,7 @@
         }
 
         async function handleHeicToImage(file, outFormat) {
-            const result = await heic2any({ blob: file, toType: `image/${outFormat}`, quality: 0.9 });
-            return result;
+            return await heic2any({ blob: file, toType: `image/${outFormat}`, quality: 0.9 });
         }
 
         async function handlePdfToJpg(file, outFormat) {
@@ -686,16 +687,11 @@
         }
 
         async function handleAudioExtract(file, outFormat) {
-            // Decode audio and convert to desired format (only WAV supported fully)
-            if (outFormat === 'wav') {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const arrayBuffer = await file.arrayBuffer();
-                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                return audioBufferToWav(audioBuffer);
-            } else {
-                // For other formats, fallback to original (or could use MediaRecorder, but keep simple)
-                throw new Error('Only WAV output is supported for audio extraction');
-            }
+            if (outFormat !== 'wav') throw new Error('Only WAV output is supported');
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const arrayBuffer = await file.arrayBuffer();
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            return audioBufferToWav(audioBuffer);
         }
 
         function audioBufferToWav(buffer) {
@@ -742,12 +738,11 @@
         }
 
         async function handlePassthrough(file, outFormat) {
-            // Return original file (rename extension only)
-            return file;
+            return file; // just return original
         }
 
         async function handleVideoToGif(file, outFormat) {
-            if (outFormat !== 'gif') throw new Error('Only GIF output is supported for video to GIF');
+            if (outFormat !== 'gif') throw new Error('Only GIF output supported');
             return new Promise((resolve, reject) => {
                 const video = document.createElement('video');
                 video.src = URL.createObjectURL(file);
@@ -790,7 +785,7 @@
         }
 
         async function handleImageToGif(file, outFormat) {
-            if (outFormat !== 'gif') throw new Error('Only GIF output is supported for image to GIF');
+            if (outFormat !== 'gif') throw new Error('Only GIF output supported');
             return new Promise((resolve, reject) => {
                 const img = new Image();
                 img.onload = () => {
